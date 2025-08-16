@@ -1,0 +1,9 @@
+[submodule "microservices/temperature-monitoring"]
+	path = microservices/temperature-monitoring
+	url = https://github.com/caricciy/ems-temperature-monitoring.git
+[submodule "microservices/temperature-processing"]
+	path = microservices/temperature-processing
+	url = https://github.com/caricciy/ems-temperature-processing.git
+[submodule "microservices/temperature-management"]
+	path = microservices/temperature-management
+	url = https://github.com/caricciy/ems-device-management.git
