@@ -1,17 +1,3 @@
-Perfeito — vou **reescrever o documento inteiro do Modelo B** em uma **narrativa fluida, altamente técnica e detalhada**, mantendo:
-
-* clareza para estagiários e juniores,
-* profundidade para arquitetos e seniors,
-* comandos sempre em blocos `bash`,
-* explicações encadeadas sem excesso de sub-tópicos,
-* fluxo completo de trabalho (feature, bugfix, release, hotfix, deploy, rollback),
-* integração natural com CI/CD, GitHub Actions, ArgoCD e Kubernetes,
-* e toda a fundamentação de *por que* cada prática existe.
-
-A **versão abaixo já está pronta para virar README.md**, caso você deseje mover para o canvas depois.
-
----
-
 # Modelo de Branching – GitHub Flow com Branch Development
 
 ## Guia Operacional e Técnico Completo para Times Java / Spring Boot
