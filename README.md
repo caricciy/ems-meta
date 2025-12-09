@@ -1,370 +1,211 @@
-ems-meta
-qual seria a melhor forma de fazer o rollback de uma versao implantada em producao com base no modelo de branch adotado abaixo e levando em consideracao que utilizamos ARO, ARGOCD, githubactions:
-# MODELO DE BRANCHING – MANUAL OPERACIONAL COMPLETO (GITFLOW SIMPLIFICADO COM BRANCH DEVELOPMENT)
+Perfeito — vou **reescrever o documento inteiro do Modelo B** em uma **narrativa fluida, altamente técnica e detalhada**, mantendo:
 
-Este documento descreve **de forma extremamente detalhada**, passo a passo, o modelo de branching adotado no Modelo B (com branch `development`), explicando **não apenas o que deve ser feito**, mas **por que deve ser feito**, permitindo que até um estagiário sem experiência prévia em Git compreenda o fluxo.
+* clareza para estagiários e juniores,
+* profundidade para arquitetos e seniors,
+* comandos sempre em blocos `bash`,
+* explicações encadeadas sem excesso de sub-tópicos,
+* fluxo completo de trabalho (feature, bugfix, release, hotfix, deploy, rollback),
+* integração natural com CI/CD, GitHub Actions, ArgoCD e Kubernetes,
+* e toda a fundamentação de *por que* cada prática existe.
 
-O objetivo é que este README.md sirva como **guia oficial** para uso em repositórios que seguem este modelo de versionamento.
-
----
-
-# 1. RESUMO DO MODELO DE BRANCHING
-
-Este modelo utiliza três níveis de branches permanentes ou semi-permanentes:
-
-| Branch          | Propósito                                                                         | Deploy    |
-| --------------- | --------------------------------------------------------------------------------- | --------- |
-| **main**        | Versão estável. Sempre representa o que está ou estará em produção.               | prd       |
-| **development** | Branch de integração da sprint. Todas as features são unificadas e testadas aqui. | dev / hml |
-| **release/**    | Criada no final da sprint para preparar a release.                                | hml       |
-| **feature/**    | Trabalho individual de desenvolvimento                                            | —         |
-| **bugfix/**     | Correções encontradas em QA/HML                                                   | —         |
-| **hotfix/**     | Correções emergenciais em produção                                                | prd       |
-| **tech/**       | Refactors e melhorias técnicas                                                    | —         |
-
-O fluxo de desenvolvimento gira em torno do ciclo:
-
-```
-feature -> development -> release -> main
-```
+A **versão abaixo já está pronta para virar README.md**, caso você deseje mover para o canvas depois.
 
 ---
 
-# 2. FUNDAMENTAÇÃO DO MODELO
+# Modelo de Branching – GitHub Flow com Branch Development
 
-Este modelo foi escolhido porque:
+## Guia Operacional e Técnico Completo para Times Java / Spring Boot
 
-1. **Agiliza a integração**: todos os desenvolvedores integram suas branches em `development`, evitando conflitos tardios.
-2. **Permite testes seguros**: `development` pode ser implantada em DEV e HML sem risco de levar código incompleto para produção.
-3. **Facilita a preparação de releases** através da branch `release/x.y.z`.
-4. **Viabiliza hotfixes limpos** sem interferir no trabalho da sprint.
-5. **Permite rollback declarativo** via tag + ArgoCD.
+Este documento descreve, em formato contínuo e detalhado, o modelo de branching adotado pela empresa, baseado em uma adaptação completa do GitHub Flow para equipes que trabalham com **sprints**, **Jira**, **GitHub Actions**, **ArgoCD** e **Kubernetes**.
+O objetivo é estabelecer um processo simples, previsível e seguro para desenvolvimento, revisão, integração, testes, deploy e rollback.
 
----
-
-# 3. ENTENDENDO OS CONCEITOS DO GIT
-
-Antes do fluxo operacional, é essencial entender o que algumas operações significam.
-
-## 3.1. O que é uma branch?
-
-Uma branch é apenas um ponteiro para um commit específico. Ela representa uma linha de desenvolvimento.
-
-## 3.2. O que é HEAD?
-
-HEAD é o ponteiro que indica **onde você está trabalhando no momento**.
-
-## 3.3. O que é um merge?
-
-Merge une o histórico de duas branches e cria um commit que indica a junção.
-
-## 3.4. O que é um PR (Pull Request)?
-
-PR é um processo de revisão antes de executar um merge.
-
-## 3.5. O que é tag?
-
-Uma tag é um "marcador" fixo em um commit, utilizada normalmente para identificar releases.
+Embora o GitHub Flow original utilize apenas a branch `main`, este modelo inclui também a branch `development` para atender cenários de QA, homologação e testes de sprint, sem comprometer a estabilidade da produção. Isso permite que o time continue utilizando práticas modernas de entrega contínua enquanto mantém rigor no controle de releases.
 
 ---
 
-# 4. FLUXO OPERACIONAL COMPLETO
+## Filosofia do Modelo
 
-## 4.1. FLUXO DE FEATURE – PASSO A PASSO
+Todo o fluxo parte de uma premissa: **a branch `main` deve refletir sempre aquilo que está em produção**, enquanto a branch `development` reflete o estado consolidado da sprint que está sendo construída. Esse alinhamento permite prever exatamente em que estado o sistema se encontra, remover incertezas e manter rastreabilidade entre ambiente, branch e release.
 
-### Objetivo
+Branches de trabalho são criadas para isolar mudanças, seja uma feature, correção ou melhoria técnica. Cada mudança deve ser pequena, revisável e testável. Essa granularidade reduz riscos e facilita revisão, depuração e rollback.
 
-Desenvolver uma nova funcionalidade de maneira isolada, segura e rastreável.
+O processo é construído de forma declarativa: Git representa o estado desejado do software, e o ArgoCD garante que o Kubernetes esteja sincronizado com esse estado. Assim, toda implantação ou rollback é rastreável e auditável.
 
-### Passos Detalhados
+---
 
-### Step 1 – Atualizar a branch main localmente
+## Tipos de Branches e Propósitos
+
+Para manter um fluxo claro, utilizamos apenas algumas categorias de branches:
+
+| Branch          | Propósito                                                                | Deploy |
+| --------------- | ------------------------------------------------------------------------ | ------ |
+| **main**        | Linha de produção. Código estável e versionado. Sempre igual ao PRD.     | prd    |
+| **development** | Consolidação da sprint. Recebe merges de features, bugfixes e melhorias. | dev    |
+| feature/*       | Desenvolvimento de funcionalidades.                                      | —      |
+| bugfix/*        | Correções encontradas em dev ou hml.                                     | —      |
+| hotfix/*        | Correções emergenciais que devem ir imediatamente para produção.         | prd    |
+| tech/*          | Refatores, upgrades de libs, melhorias técnicas.                         | —      |
+
+Essa separação evita confusão e define claramente onde cada tipo de trabalho deve acontecer.
+
+---
+
+## Fluxo de Desenvolvimento de uma Feature
+
+O desenvolvimento de uma funcionalidade segue um ciclo lógico. Primeiro, atualizamos nossa base local; depois, isolamos o trabalho; em seguida, desenvolvemos incrementalmente, garantindo testes e commits claros; finalmente, integramos à branch adequada através de um Pull Request.
+
+O processo começa garantindo que sua `main` e `development` estejam sincronizadas com o repositório remoto:
 
 ```bash
 git checkout main
 git pull origin main
-```
 
-Por que fazemos isso?
-
-* Para garantir que estamos trabalhando sobre a versão mais recente do código.
-* Para evitar conflitos futuros.
-
----
-
-### Step 2 – Atualizar a branch development
-
-```bash
 git checkout development
 git pull origin development
 ```
 
-Motivação:
-
-* A feature deve nascer a partir da última versão integrada da sprint.
-
----
-
-### Step 3 – Criar a branch de feature
+Com isso feito, criamos a branch da feature, sempre atrelada a uma tarefa da sprint. A nomenclatura precisa refletir claramente o propósito:
 
 ```bash
 git checkout -b feature/SIM-101-melhora-simulacao-parcelas
 ```
 
-Motivação:
-
-* Uma branch dedicada evita que mudanças inacabadas atrapalhem o time.
-* Permite versionamento organizado.
-
----
-
-### Step 4 – Desenvolver a funcionalidade
-
-Aqui o desenvolvedor:
-
-* Implementa código
-* Cria testes
-* Atualiza documentação
-* Valida regras de negócio
-* Executa testes localmente
-
-Commits devem ser pequenos, exatos e contextualizados:
+O desenvolvimento deve ocorrer de forma incremental. Em cada alteração, adicione somente o necessário e escreva commits pequenos, que expliquem exatamente a mudança realizada. Você pode usar commits curtos com `-m` ou commits completos ativando o editor de mensagem, especialmente quando precisar justificar um conjunto maior de alterações.
 
 ```bash
 git add .
-git commit -m "feat: melhora cálculo de simulação de parcelas"
-```
+git commit -m "feat: adiciona cálculo revisado de parcelas"
 
-Se precisar escrever um commit mais detalhado:
-
-```bash
+git add .
 git commit
+# Editor será aberto; escreva um título e depois um corpo detalhado.
 ```
 
-Editor abre e você descreve:
-
-```
-feat: adiciona nova metodologia de cálculo
-- aplica regra de mínimos
-- corrige arredondamento
-- adiciona testes unitários
-```
-
----
-
-### Step 5 – Enviar branch para o repositório remoto
+Ao finalizar um bloco de trabalho, envie sua branch para o GitHub:
 
 ```bash
 git push -u origin feature/SIM-101-melhora-simulacao-parcelas
 ```
 
-Motivação:
+Feito isso, abra um Pull Request direcionado para `development`.
+Esse PR deve conter:
 
-* Permite abertura do Pull Request.
-* Salva o progresso no servidor.
+* referência ao ticket,
+* descrição da mudança,
+* instruções de teste,
+* riscos envolvidos,
+* validação esperada.
 
----
+Assim que o PR for aberto, a pipeline de CI executa automaticamente validações como compilação, testes, análise estática e verificação de segurança. Somente após CI verde e aprovação de review o merge pode ocorrer.
 
-### Step 6 – Abrir Pull Request para development
-
-Motivação:
-
-* PR garante revisão técnica.
-* CI é executado obrigatoriamente.
-
-Checklist do PR:
-
-* Descrição completa
-* Link para o ticket
-* Impactos
-* Como testar
-* Mudanças relevantes
+Com o merge concluído, a branch `development` passa a representar o estado consolidado da sprint, incluindo a feature recém-implementada. A cada merge, o ambiente **dev** recebe automaticamente uma nova versão, permitindo que QA e analistas já testem a sprint de forma incremental.
 
 ---
 
-### Step 7 – CI executa validações
+## Consolidação da Sprint e Criação da Release
 
-CI executa:
+Ao longo da sprint, várias features, bugfixes e melhorias técnicas são integradas à branch `development`. Esse ciclo de build contínuo mantém a branch sempre executável e testável, reduzindo incertezas ao final da sprint.
 
-* Build Maven
-* Testes unitários
-* Análise estática
-* Segurança
-
-Se falhar, o PR **não pode** ser aprovado.
-
----
-
-### Step 8 – Code Review
-
-O revisor verifica:
-
-* Padrões de código
-* Arquitetura
-* Impacto em outras áreas
-* Testes e cobertura
-
-Após aprovação, segue para merge.
-
----
-
-### Step 9 – Merge em development
-
-Executado via Squash & Merge.
-
-Por quê?
-
-* Para manter histórico limpo.
-* Porque cada feature vira um único commit em development.
-
----
-
-### Step 10 – Deploy automático para dev
-
-Após o merge, uma action GitHub pode gerar uma tag automática do tipo:
-
-```
-v2.6.0-dev.001
-```
-
-ArgoCD consome o repositório de manifests e atualiza o ambiente dev.
-
----
-
-## 4.2. FLUXO DE RELEASE
-
-### Step 1 – Criar a branch de release no final da sprint
+Quando todos os itens da sprint forem concluídos e devidamente testados em dev, criamos a branch de release:
 
 ```bash
-git checkout development
-git pull origin development
 git checkout -b release/2.6.0
 ```
 
-Motivação:
+Essa branch representa um congelamento do escopo.
+Nenhuma nova funcionalidade deve entrar nela; apenas ajustes necessários para homologação.
 
-* Congelar escopo da sprint
-* A partir daqui, apenas correções podem entrar
-
----
-
-### Step 2 – Deploy automático em hml
-
-Action gera tag:
-
-```
-v2.6.0-rc.001
-```
-
-ArgoCD deploya em hml.
-
----
-
-### Step 3 – Correções de homologação
-
-Correções criadas em branches:
+Durante a homologação, se problemas forem encontrados, criamos branches de bugfix a partir da própria release:
 
 ```bash
-git checkout -b bugfix/HML-450-ajuste-liberacao
+git checkout -b bugfix/HML-450-ajuste-validacao-liberacao
 ```
 
-E mescladas em release/2.6.0.
+Após aplicar as correções, fazemos merge de volta na branch da release e geramos nova versão para o ambiente hml. Esse ciclo continua até a aprovação.
 
 ---
 
-### Step 4 – Aprovação de release
+## Deploy em Ambientes Dev, Hml e Prod
 
-Com HML validado, merge para main:
+A implantação é feita via GitOps. Não executamos comandos manuais no cluster; tudo é acionado via Git + pipelines + ArgoCD. A lógica é a seguinte:
 
-```bash
-git checkout main
-git merge release/2.6.0
-```
+* merges em **development** disparam deploy no ambiente dev;
+* merges ou atualizações na **release/** disparam deploy em hml;
+* merges para **main** (ou criação da tag final) disparam deploy em produção.
 
-Action criando tag final:
-
-```
-v2.6.0
-```
-
-ArgoCD aplica em produção.
+O deploy ocorre sempre após edição automática do manifest no repositório GitOps e sincronização pelo ArgoCD.
 
 ---
 
-# 4.3. FLUXO DE HOTFIX
+## Publicação em Produção
 
-Existem dois cenários:
-
-## Cenário 1 – main = produção
+Quando a release é validada, o passo final é integrá-la na branch principal:
 
 ```bash
 git checkout main
 git pull origin main
-git checkout -b hotfix/INC-777-erro-liberacao
+git merge release/2.6.0
 ```
 
-Após correção:
+E criar a tag da versão final:
 
 ```bash
-git push -u origin hotfix/INC-777-erro-liberacao
+git tag -a v2.6.0 -m "Release 2.6.0 homologada e aprovada"
+git push origin v2.6.0
 ```
 
-Abrir PR para main.
-
-Após merge, tag:
-
-```
-v2.6.1
-```
-
-Deploy PRD.
+A partir desse momento, o repositório GitOps recebe a atualização de imagem correspondente e o ArgoCD implanta a release automaticamente em produção.
 
 ---
 
-## Cenário 2 – main contém features que não podem ir para PRD
+## Fluxo de Hotfix para Produção
 
-Criar hotfix a partir da tag da produção:
+Quando há um problema crítico em produção, o tempo de resposta deve ser mínimo. Um hotfix segue processo semelhante a uma feature, porém baseado no código que está rodando em produção.
+
+Se `main` estiver sincronizada com produção:
+
+```bash
+git checkout main
+git pull origin main
+git checkout -b hotfix/INC-777-erro-liberacao-valor
+```
+
+Se `main` já contém códigos não liberados, criamos o hotfix a partir da tag da versão de produção:
 
 ```bash
 git checkout v2.6.0
-git checkout -b hotfix/INC-777-erro-liberacao
+git checkout -b hotfix/INC-777-erro-liberacao-valor
 ```
 
-Após correção, criar tag:
+Após implementar e testar:
 
+```bash
+git add .
+git commit -m "fix: corrige erro na liberação de valor"
+git push -u origin hotfix/INC-777-erro-liberacao-valor
 ```
-v2.6.1
-```
 
-Deploy PRD.
-
-PR deve ser mergeado em main posteriormente.
+Abrimos PR diretamente para `main`.
+Após aprovado, mergeado e tagueado, o hotfix é implantado automaticamente em produção.
 
 ---
 
-# 5. ROLLBACK COMPLETO VIA ARGOCD
+## Rollback com ArgoCD
 
-Rollback via ArgoCD deve ser sempre preferido em vez de tentar revert manualmente.
+Quando um deploy apresenta comportamento inesperado, o rollback deve ser imediato, preciso e seguro. O modelo GitOps evita intervenções diretas no cluster.
 
-## Passos
+O rollback segue um processo simples:
 
-1. Acessar ArgoCD
-2. Selecionar a aplicação
-3. Ir em "History and Rollback"
-4. Identificar versão estável
-5. Clicar em Rollback
-6. Validar aplicação no cluster
+1. Acessar a aplicação no ArgoCD.
+2. Abrir "History and Rollback".
+3. Selecionar o commit ou versão anterior.
+4. Executar rollback.
 
-ArgoCD restaura:
-
-* imagem
-* variáveis
-* réplicas
-* configurações de deployment
+O ArgoCD restabelecerá manifestos, image tags e configurações correspondentes àquele estado, aplicando todas as mudanças no cluster automaticamente.
 
 ---
 
-# 6. DIAGRAMA COMPLETO EM MERMAID (MODELO B)
+## Diagrama do Modelo B (GitGraph com Deploys)
 
 ```mermaid
 gitGraph
@@ -372,106 +213,57 @@ gitGraph
     branch development
     commit id: "sprint-start"
 
-    %% FEATURE – Simulação
-    branch feature/SIM-101-melhora-simulacao-parcelas
-    commit id: "sim1-1"
-    commit id: "sim1-2"
-    checkout development
-    merge feature/SIM-101-melhora-simulacao-parcelas tag: "merge-sim1"
-
-    %% FEATURE – Formalização
-    branch feature/FORM-212-assinatura-eletronica
-    commit id: "form1-1"
-    commit id: "form1-2"
-    checkout development
-    merge feature/FORM-212-assinatura-eletronica tag: "merge-form1"
-
-    %% Bugfix HML/QA
-    branch bugfix/ANL-309-corrige-score-calculo
-    commit id: "bugfix-anl-1"
-    checkout development
-    merge bugfix/ANL-309-c*/
-
-```
----
-
-gitGraph
-    commit id: "start-main" tag: "v2.5.1"
-    branch development
-    commit id: "sprint-start"
-
-    %% ============================================
     %% Feature 1 – Simulação de crédito
-    %% ============================================
     branch feature/SIM-101-melhora-simulacao-parcelas
     commit id: "sim1-1"
     commit id: "sim1-2"
     checkout development
     merge feature/SIM-101-melhora-simulacao-parcelas tag: "merge-sim1"
+    commit id: "deploy-dev"
 
-    %% ============================================
     %% Feature 2 – Formalização
-    %% ============================================
     branch feature/FORM-212-assinatura-eletronica
     commit id: "form1-1"
     commit id: "form1-2"
     checkout development
     merge feature/FORM-212-assinatura-eletronica tag: "merge-form1"
+    commit id: "deploy-dev"
 
-    %% ============================================
-    %% Bugfix em QA / HML
-    %% ============================================
+    %% Bugfix
     branch bugfix/ANL-309-corrige-score-calculo
     commit id: "bugfix-anl-1"
     checkout development
     merge bugfix/ANL-309-corrige-score-calculo tag: "merge-anl-bugfix"
-
-    %% 🔵 deploy-dev — início dos testes integrados
     commit id: "deploy-dev"
 
-    %% ============================================
-    %% Tech branch – atualização de libs
-    %% ============================================
+    %% Tech
     branch tech/PLAT-002-update-spring
     commit id: "tech1"
     checkout development
     merge tech/PLAT-002-update-spring tag: "merge-tech-spring"
+    commit id: "deploy-dev"
 
-    %% 🔶 deploy-hml — validação de negócio
-    commit id: "deploy-hml"
-
-    %% ============================================
-    %% Criando release 2.6.0
-    %% ============================================
+    %% Release
     branch release/2.6.0
-    commit id: "prepare-hml-release"
+    commit id: "release-created"
 
-    %% Bugfix de homologação – liberação de valor
+    %% HML fix
     branch bugfix/HML-450-ajuste-validacao-liberacao
     commit id: "hmlfix1"
     commit id: "hmlfix2"
     checkout release/2.6.0
     merge bugfix/HML-450-ajuste-validacao-liberacao tag: "merge-hml-fixes"
+    commit id: "deploy-hml"
 
-    %% 🔶 deploy-hml — RC validado
-    commit id: "deploy-hml-rc"
-
-    %% ============================================
-    %% Merge para produção
-    %% ============================================
+    %% Produção
     checkout main
     merge release/2.6.0 tag: "v2.6.0"
-
-    %% 🔴 deploy-prd — release em produção
     commit id: "deploy-prd"
 
-    %% ============================================
-    %% Hotfix em produção
-    %% ============================================
+    %% Hotfix
     branch hotfix/INC-777-erro-liberacao-valor
     commit id: "hotfix1"
     checkout main
     merge hotfix/INC-777-erro-liberacao-valor tag: "v2.6.1"
-
-    %% 🔴 deploy-prd — hotfix aplicado
     commit id: "deploy-prd-hotfix"
+```
