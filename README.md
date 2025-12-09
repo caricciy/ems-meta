@@ -393,3 +393,85 @@ gitGraph
     merge bugfix/ANL-309-c*/
 
 ```
+---
+
+gitGraph
+    commit id: "start-main" tag: "v2.5.1"
+    branch development
+    commit id: "sprint-start"
+
+    %% ============================================
+    %% Feature 1 – Simulação de crédito
+    %% ============================================
+    branch feature/SIM-101-melhora-simulacao-parcelas
+    commit id: "sim1-1"
+    commit id: "sim1-2"
+    checkout development
+    merge feature/SIM-101-melhora-simulacao-parcelas tag: "merge-sim1"
+
+    %% ============================================
+    %% Feature 2 – Formalização
+    %% ============================================
+    branch feature/FORM-212-assinatura-eletronica
+    commit id: "form1-1"
+    commit id: "form1-2"
+    checkout development
+    merge feature/FORM-212-assinatura-eletronica tag: "merge-form1"
+
+    %% ============================================
+    %% Bugfix em QA / HML
+    %% ============================================
+    branch bugfix/ANL-309-corrige-score-calculo
+    commit id: "bugfix-anl-1"
+    checkout development
+    merge bugfix/ANL-309-corrige-score-calculo tag: "merge-anl-bugfix"
+
+    %% 🔵 deploy-dev — início dos testes integrados
+    commit id: "deploy-dev"
+
+    %% ============================================
+    %% Tech branch – atualização de libs
+    %% ============================================
+    branch tech/PLAT-002-update-spring
+    commit id: "tech1"
+    checkout development
+    merge tech/PLAT-002-update-spring tag: "merge-tech-spring"
+
+    %% 🔶 deploy-hml — validação de negócio
+    commit id: "deploy-hml"
+
+    %% ============================================
+    %% Criando release 2.6.0
+    %% ============================================
+    branch release/2.6.0
+    commit id: "prepare-hml-release"
+
+    %% Bugfix de homologação – liberação de valor
+    branch bugfix/HML-450-ajuste-validacao-liberacao
+    commit id: "hmlfix1"
+    commit id: "hmlfix2"
+    checkout release/2.6.0
+    merge bugfix/HML-450-ajuste-validacao-liberacao tag: "merge-hml-fixes"
+
+    %% 🔶 deploy-hml — RC validado
+    commit id: "deploy-hml-rc"
+
+    %% ============================================
+    %% Merge para produção
+    %% ============================================
+    checkout main
+    merge release/2.6.0 tag: "v2.6.0"
+
+    %% 🔴 deploy-prd — release em produção
+    commit id: "deploy-prd"
+
+    %% ============================================
+    %% Hotfix em produção
+    %% ============================================
+    branch hotfix/INC-777-erro-liberacao-valor
+    commit id: "hotfix1"
+    checkout main
+    merge hotfix/INC-777-erro-liberacao-valor tag: "v2.6.1"
+
+    %% 🔴 deploy-prd — hotfix aplicado
+    commit id: "deploy-prd-hotfix"
