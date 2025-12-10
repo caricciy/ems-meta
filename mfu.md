@@ -2,20 +2,9 @@
 
 Significa: **a menor unidade de negócio autossuficiente**, que serve como **bloco de construção** para serviços maiores.
 
-Outras opções igualmente boas (se quiser testar tonalidade):
-
-* **Core Block Service (CBS)**
-* **Single-Scope Service (SSS)**
-* **Domain Core Service (DCS)**
-* **Elemento de Domínio (ED)**
-
-Se quiser outro estilo (mais técnico, mais corporativo ou mais "cool startup"), posso sugerir novas variações.
-
-Abaixo segue o texto revisado usando **MFU — Módulo Fundamental**.
-
 ---
 
-# MFU — Módulo Fundamental (antigo SRV Atômico)
+# MFU — Módulo Fundamental
 
 Um **MFU (Módulo Fundamental)** é a menor unidade de construção dentro da plataforma de serviços estruturantes.
 Ele representa um **domínio de negócio bem definido**, contendo suas **regras, validações, modelos, casos de uso e persistência**, sem depender de outros serviços para funcionar.
