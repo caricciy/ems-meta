@@ -142,3 +142,5 @@ Quando você cria sistemas assim:
 * fica difícil quebrar o sistema sem querer
 
 MFUs permitem que a plataforma cresça **com ordem**, não com "puxadinhos".
+
+[O que fazer se eu precisar que dois MFUs se comuniquem via HTTP/REST?](https://github.com/caricciy/ems-meta/edit/main/mfu.md)
