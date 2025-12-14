@@ -191,7 +191,7 @@ O ArgoCD restabelecerá manifestos, image tags e configurações correspondentes
 
 ---
 
-## Diagrama do Modelo B (GitGraph com Deploys)
+## Diagrama do Modelo(Git com Deploys)
 
 ```mermaid
 gitGraph
